@@ -2,20 +2,19 @@
 
 const Hapi = require('hapi');
 const Good = require('good');
-const Joi = require("joi");
-
-// Create a server with a host and port
+const engine = require('hapi-react')({beautify: true});
 const server = new Hapi.Server();
 
 server.connection({
   host: 'localhost',
   port: 3000,
-  labels: ['api']
+  labels: ['api', 'test']
 });
 
 server.register([
     require('inert'),
     require("vision"),
+    require("./routes"),
     {
       register: Good,
       options: {
@@ -77,6 +76,16 @@ server.register([
       }
     });
 
+    server.views({
+      defaultExtension: 'jsx',
+      engines: {
+        jsx: engine, // support for .jsx files
+        js: engine // support for .js
+      },
+      relativeTo: __dirname,
+      path: 'views'
+    });
+
     server.start((err) => {
       if (err) {
         throw err;
@@ -86,32 +95,3 @@ server.register([
     ;
 
   });
-
-server.route([{
-  path: '/foobar/{foo}/{bar}',
-  method: 'GET',
-  config: {
-    tags: ['api'],
-    validate: {
-      params: {
-        foo: Joi.string().required().description('test'),
-        bar: Joi.string().required()
-      }
-    },
-    handler: function (request, reply) {
-      reply({
-        foo: request.params.foo,
-        bar: request.params.bar
-      });
-    }
-  }
-}, {
-  method: 'GET',
-  path: '/hello',
-  config: {
-    tags: ['api'],
-    handler: function (request, reply) {
-      reply.file('./public/hello.html');
-    }
-  }
-}]);
